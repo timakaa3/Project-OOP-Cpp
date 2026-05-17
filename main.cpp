@@ -190,3 +190,41 @@ public:
                std::to_string(recurrenceDays);
     }
 };
+
+// ══════════════════════════════════════════════════════
+//  CLASS: TaskFilter  (Specification pattern)
+// ══════════════════════════════════════════════════════
+ 
+class TaskFilter {
+private:
+    std::string keyword;
+    int priorityMin = 1, priorityMax = 10;
+    int statusMask  = 7; // bit0=TODO, bit1=IN_PROGRESS, bit2=DONE  (7 = all)
+    std::time_t deadlineBefore = 0;
+ 
+public:
+    TaskFilter& setKeyword(const std::string& kw)          { keyword = kw; return *this; }
+    TaskFilter& setPriorityRange(int lo, int hi)           { priorityMin = lo; priorityMax = hi; return *this; }
+    TaskFilter& setStatusMask(int mask)                    { statusMask = mask; return *this; }
+    TaskFilter& setDeadlineBefore(std::time_t t)           { deadlineBefore = t; return *this; }
+ 
+    bool matches(const Task& task) const {
+        if (!keyword.empty()) {
+            std::string kl = keyword, tl = task.getTitle(), dl = task.getDescription();
+            std::transform(kl.begin(), kl.end(), kl.begin(), ::tolower);
+            std::transform(tl.begin(), tl.end(), tl.begin(), ::tolower);
+            std::transform(dl.begin(), dl.end(), dl.begin(), ::tolower);
+            if (tl.find(kl) == std::string::npos && dl.find(kl) == std::string::npos)
+                return false;
+        }
+        if (!(statusMask & (1 << (int)task.getStatus()))) return false;
+        if (task.getPriority() < priorityMin || task.getPriority() > priorityMax) return false;
+        if (deadlineBefore && task.getDueDate() > deadlineBefore) return false;
+        return true;
+    }
+ 
+    friend std::ostream& operator<<(std::ostream& os, const TaskFilter& f) {
+        os << "Filter[kw='" << f.keyword << "' p=" << f.priorityMin << "-" << f.priorityMax << "]";
+        return os;
+    }
+};
