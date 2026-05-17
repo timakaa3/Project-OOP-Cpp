@@ -228,3 +228,69 @@ public:
         return os;
     }
 };
+
+// ══════════════════════════════════════════════════════
+//  STRUCT: ProjectStats
+// ══════════════════════════════════════════════════════
+ 
+struct ProjectStats {
+    int total, done, overdue;
+    double percentDone, avgSecondsLeft;
+};
+ 
+// ══════════════════════════════════════════════════════
+//  CLASS: Project
+// ══════════════════════════════════════════════════════
+ 
+class Project {
+private:
+    std::string projectId, name, description;
+    std::vector<Task*> tasks;
+ 
+public:
+    Project(const std::string& id, const std::string& name, const std::string& desc = "")
+        : projectId(id), name(name), description(desc) {}
+ 
+    ~Project() { for (Task* t : tasks) delete t; }
+ 
+    std::string getId()   const { return projectId; }
+    std::string getName() const { return name; }
+    std::string getDesc() const { return description; }
+    const std::vector<Task*>& getTasks() const { return tasks; }
+ 
+    void addTask(Task* t) { tasks.push_back(t); }
+ 
+    bool removeTask(const std::string& id) {
+        for (auto it = tasks.begin(); it != tasks.end(); ++it) {
+            if ((*it)->getId() == id) { delete *it; tasks.erase(it); return true; }
+        }
+        return false;
+    }
+ 
+    Task* findTask(const std::string& id) {
+        for (Task* t : tasks) if (t->getId() == id) return t;
+        return nullptr;
+    }
+ 
+    ProjectStats getStats() const {
+        ProjectStats s{};
+        s.total = (int)tasks.size();
+        double totalLeft = 0;
+        std::time_t now = std::time(nullptr);
+        for (const Task* t : tasks) {
+            if (t->getStatus() == Status::DONE) ++s.done;
+            if (t->isOverdue()) ++s.overdue;
+            totalLeft += (double)(t->getDueDate() - now);
+        }
+        s.percentDone    = s.total ? 100.0 * s.done / s.total : 0;
+        s.avgSecondsLeft = s.total ? totalLeft / s.total : 0;
+        return s;
+    }
+ 
+    std::vector<Task*> getTasksByPriority() const {
+        std::vector<Task*> sorted = tasks;
+        std::sort(sorted.begin(), sorted.end(),
+            [](Task* a, Task* b) { return a->getPriority() > b->getPriority(); });
+        return sorted;
+    }
+};
