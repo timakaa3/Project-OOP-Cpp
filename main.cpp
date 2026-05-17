@@ -149,3 +149,44 @@ public:
                statusToString(status) + "," + tagStr;
     }
 };
+
+// ══════════════════════════════════════════════════════
+//  CLASS: RecurringTask  (наследява Task)
+// ══════════════════════════════════════════════════════
+ 
+class RecurringTask : public Task {
+private:
+    int recurrenceDays;
+ 
+public:
+    RecurringTask(const std::string& id, const std::string& title,
+                  const std::string& desc, std::time_t due, int prio, int days)
+        : Task(id, title, desc, due, prio), recurrenceDays(days) {}
+ 
+    int         getRecurrenceDays()   const { return recurrenceDays; }
+    std::time_t getNextOccurrence()   const { return getDueDate() + recurrenceDays * 86400LL; }
+ 
+    std::string toString() const override {
+        return Task::toString() + " [ПОВТАРЯ се на " + std::to_string(recurrenceDays) + " дни]";
+    }
+ 
+    Task* clone() const override {
+        RecurringTask* next = new RecurringTask(
+            getId() + "_next", getTitle(), getDescription(),
+            getNextOccurrence(), getPriority(), recurrenceDays);
+        for (const auto& tag : getTags()) next->addTag(tag);
+        return next;
+    }
+ 
+    std::string toCSV() const override {
+        std::string tagStr;
+        for (size_t i = 0; i < getTags().size(); ++i) {
+            if (i) tagStr += ";";
+            tagStr += getTags()[i];
+        }
+        return "RECURRING," + getId() + "," + getTitle() + "," + getDescription() + "," +
+               std::to_string(getDueDate()) + "," + std::to_string(getPriority()) + "," +
+               statusToString(getStatus()) + "," + tagStr + "," +
+               std::to_string(recurrenceDays);
+    }
+};
