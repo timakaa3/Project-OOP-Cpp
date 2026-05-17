@@ -294,3 +294,35 @@ public:
         return sorted;
     }
 };
+
+// ══════════════════════════════════════════════════════
+//  CLASS: Archive
+// ══════════════════════════════════════════════════════
+ 
+class Archive {
+private:
+    std::vector<Task*> archivedTasks;
+    int retentionDays;
+ 
+public:
+    explicit Archive(int days = 7) : retentionDays(days) {}
+    ~Archive() { for (Task* t : archivedTasks) delete t; }
+ 
+    bool archiveIfDone(Task* t) {
+        if (t->getStatus() != Status::DONE) return false;
+        std::time_t threshold = std::time(nullptr) - retentionDays * 86400LL;
+        if (t->getDueDate() < threshold) {
+            archivedTasks.push_back(t->clone());
+            return true;
+        }
+        return false;
+    }
+ 
+    const std::vector<Task*>& getAll() const { return archivedTasks; }
+ 
+    void printAll() const {
+        std::cout << "=== Архив (" << archivedTasks.size() << " задачи) ===\n";
+        for (const Task* t : archivedTasks) std::cout << "  " << t->toString() << "\n";
+        if (archivedTasks.empty()) std::cout << "  Архивът е празен.\n";
+    }
+};
