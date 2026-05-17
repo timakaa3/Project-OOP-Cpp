@@ -63,3 +63,89 @@ static std::time_t parseDate(const std::string& s) {
     tm.tm_hour = 23; tm.tm_min = 59; tm.tm_sec = 59;
     return std::mktime(&tm);
 }
+
+// ══════════════════════════════════════════════════════
+//  CLASS: Task
+// ══════════════════════════════════════════════════════
+ 
+class Task {
+protected:
+    std::string taskId, title, description;
+    std::time_t dueDate;
+    int priority;
+    Status status;
+    std::vector<std::string> tags;
+ 
+public:
+    Task(const std::string& id, const std::string& title,
+         const std::string& desc, std::time_t due, int prio)
+        : taskId(id), title(title), description(desc),
+          dueDate(due), status(Status::TODO) { setPriority(prio); }
+ 
+    virtual ~Task() = default;
+ 
+    // Getters
+    std::string getId()          const { return taskId; }
+    std::string getTitle()       const { return title; }
+    std::string getDescription() const { return description; }
+    std::time_t getDueDate()     const { return dueDate; }
+    int         getPriority()    const { return priority; }
+    Status      getStatus()      const { return status; }
+    const std::vector<std::string>& getTags() const { return tags; }
+ 
+    // Setters with validation
+    void setTitle(const std::string& t) {
+        if (t.empty()) throw std::invalid_argument("Title cannot be empty.");
+        title = t;
+    }
+    void setDescription(const std::string& d) { description = d; }
+    void setDueDate(std::time_t d)             { dueDate = d; }
+    void setPriority(int p) {
+        if (p < 1 || p > 10) throw std::invalid_argument("Priority must be 1-10.");
+        priority = p;
+    }
+    void setStatus(Status s) { status = s; }
+    void addTag(const std::string& tag) { tags.push_back(tag); }
+ 
+    bool isOverdue() const {
+        return status != Status::DONE && std::time(nullptr) > dueDate;
+    }
+    bool isDueWithin48Hours() const {
+        if (status == Status::DONE) return false;
+        std::time_t now = std::time(nullptr);
+        return dueDate >= now && dueDate <= now + 48 * 3600;
+    }
+ 
+    virtual std::string toString() const {
+        char buf[20];
+        std::tm* tm_info = std::localtime(&dueDate);
+        std::strftime(buf, sizeof(buf), "%Y-%m-%d", tm_info);
+        std::ostringstream oss;
+        oss << "[" << taskId << "] " << title
+            << " | P:" << priority
+            << " | " << statusToString(status)
+            << " | " << buf;
+        if (!tags.empty()) {
+            oss << " | #";
+            for (size_t i = 0; i < tags.size(); ++i) {
+                if (i) oss << " #";
+                oss << tags[i];
+            }
+        }
+        if (isOverdue()) oss << " *** ПРОСРОЧЕНА ***";
+        return oss.str();
+    }
+ 
+    virtual Task* clone() const { return new Task(*this); }
+ 
+    virtual std::string toCSV() const {
+        std::string tagStr;
+        for (size_t i = 0; i < tags.size(); ++i) {
+            if (i) tagStr += ";";
+            tagStr += tags[i];
+        }
+        return "TASK," + taskId + "," + title + "," + description + "," +
+               std::to_string(dueDate) + "," + std::to_string(priority) + "," +
+               statusToString(status) + "," + tagStr;
+    }
+};
