@@ -1,0 +1,32 @@
+CXX      = g++
+CXXFLAGS = -std=c++17 -Wall -Wextra -Iinclude
+SRCDIR   = src
+OBJDIR   = obj
+
+SOURCES  = $(SRCDIR)/common.cpp \
+           $(SRCDIR)/Task.cpp \
+           $(SRCDIR)/TaskFilter.cpp \
+           $(SRCDIR)/Project.cpp \
+           $(SRCDIR)/Archive.cpp \
+           $(SRCDIR)/FileManager.cpp \
+           $(SRCDIR)/TaskManager.cpp \
+           $(SRCDIR)/main.cpp
+
+OBJECTS  = $(patsubst $(SRCDIR)/%.cpp, $(OBJDIR)/%.o, $(SOURCES))
+TARGET   = task_manager
+
+all: $(OBJDIR) $(TARGET)
+
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+
+$(TARGET): $(OBJECTS)
+  $(CXX) $(CXXFLAGS) -o $@ $^
+
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+  $(CXX) $(CXXFLAGS) -c -o $@ $
+
+clean:
+  rm -rf $(OBJDIR) $(TARGET)
+
+.PHONY: all clean
